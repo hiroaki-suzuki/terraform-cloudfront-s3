@@ -18,6 +18,44 @@ locals {
   name_prefix = "${local.app_name}-${var.env}"
 }
 
+# ================================================================================
+# Resource
+# ================================================================================
+
+# フロントエンドデプロイ用IAMユーザーの作成
+resource "aws_iam_user" "front-app-deploy" {
+  name = "${local.name_prefix}-front-app-deploy"
+
+  tags = {
+    Environment = "dev"
+  }
+}
+
+# フロントエンドデプロイ用IAMユーザーのポリシーの作成
+data "aws_iam_policy_document" "front-app-deploy" {
+  statement {
+    effect  = "Allow"
+    actions = [
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:ListBucket"
+    ]
+    resources = ["${aws_s3_bucket.front-app.arn}/*"]
+  }
+}
+
+# フロントエンドデプロイ用IAMユーザーのポリシーのアタッチ
+resource "aws_iam_user_policy" "front-app-deploy" {
+  name   = "${local.name_prefix}-front-app-deploy-policy"
+  user   = aws_iam_user.front-app-deploy.name
+  policy = data.aws_iam_policy_document.front-app-deploy.json
+}
+
+resource "aws_iam_access_key" "front-app-deploy" {
+  user    = aws_iam_user.front-app-deploy.name
+  pgp_key = var.front_app_deployer_gpg
+}
+
 # フロントエンドバケットの作成
 resource "aws_s3_bucket" "front-app" {
   bucket = "${var.env}.${local.app_name}.com"
@@ -78,13 +116,17 @@ data "aws_iam_policy_document" "front-app" {
       identifiers = [
         "arn:aws:iam::${var.aws_account}:root",
         aws_cloudfront_origin_access_identity.front-app.iam_arn,
+        aws_iam_user.front-app-deploy.arn
       ]
     }
     actions = [
       "s3:GetObject",
+      "s3:PutObject",
+      "s3:ListBucket"
     ]
     resources = [
       "${aws_s3_bucket.front-app.arn}/*",
+      aws_s3_bucket.front-app.arn
     ]
   }
 }
@@ -147,3 +189,12 @@ resource "aws_cloudfront_distribution" "front-app" {
 
 # CloudFrontのアクセス許可設定の作成
 resource "aws_cloudfront_origin_access_identity" "front-app" {}
+
+# ================================================================================
+# Outputs
+# ================================================================================
+
+# フロンド資材のデプロイ用ユーザーのシークレットアクセスキーの出力
+output "front-app-deployer-secret" {
+  value = aws_iam_access_key.front-app-deploy.encrypted_secret
+}

@@ -6,3 +6,5 @@ variable "aws_account" {}
 variable "aws_access_key" {}
 # AWSシークレットキー
 variable "aws_secret_key" {}
+# フロント資材のデプロイ用ユーザーのアクセスキー生成用GPG鍵
+variable "front_app_deployer_gpg" {}
