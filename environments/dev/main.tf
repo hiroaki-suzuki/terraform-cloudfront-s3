@@ -131,6 +131,34 @@ data "aws_iam_policy_document" "front-app" {
   }
 }
 
+# Basic認証のCloudFront Functionの作成
+resource "aws_cloudfront_function" "front-app" {
+  name    = "${local.name_prefix}-basic-auth"
+  runtime = "cloudfront-js-1.0"
+  comment = "Basic Auth"
+  publish = true
+  code    = <<EOT
+function handler(event) {
+    var request = event.request;
+    var headers = request.headers;
+    var authString = "Basic cmlyYXpvdTotWjNYaHlaTVJRR0dRdnRLcEBGdF9y";
+
+    if (
+        typeof headers.authorization === "undefined" ||
+        headers.authorization.value !== authString
+    ) {
+        return {
+            statusCode: 401,
+            statusDescription: "Unauthorized",
+            headers: { "www-authenticate": { value: "Basic" } }
+        };
+    }
+
+    return request;
+}
+EOT
+}
+
 # CloudFrontの作成
 resource "aws_cloudfront_distribution" "front-app" {
   origin {
@@ -165,6 +193,11 @@ resource "aws_cloudfront_distribution" "front-app" {
     default_ttl            = 3600
     max_ttl                = 86400
     compress               = true
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.front-app.arn
+    }
   }
 
   restrictions {
