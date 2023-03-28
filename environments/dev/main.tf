@@ -38,6 +38,7 @@ data "aws_iam_policy_document" "front-app-deploy" {
     actions = [
       "s3:GetObject",
       "s3:PutObject",
+      "s3:DeleteObject",
       "s3:ListBucket"
     ]
     resources = ["${aws_s3_bucket.front-app.arn}/*"]
@@ -122,6 +123,7 @@ data "aws_iam_policy_document" "front-app" {
     actions = [
       "s3:GetObject",
       "s3:PutObject",
+      "s3:DeleteObject",
       "s3:ListBucket"
     ]
     resources = [
