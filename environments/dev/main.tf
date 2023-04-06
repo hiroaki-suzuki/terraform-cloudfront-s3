@@ -14,7 +14,7 @@ provider "aws" {
 }
 
 locals {
-  app_name    = "organizing-thoughts"
+  app_name    = "hs-cloudfront-s3"
   name_prefix = "${local.app_name}-${var.env}"
 }
 
