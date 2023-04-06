@@ -143,7 +143,7 @@ resource "aws_cloudfront_function" "front-app" {
 function handler(event) {
     var request = event.request;
     var headers = request.headers;
-    var authString = "Basic cmlyYXpvdTotWjNYaHlaTVJRR0dRdnRLcEBGdF9y";
+    var authString = "Basic xxxxxxxxxxxxxxxxxxxx";
 
     if (
         typeof headers.authorization === "undefined" ||
